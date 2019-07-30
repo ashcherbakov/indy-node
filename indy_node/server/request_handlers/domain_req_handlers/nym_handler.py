@@ -10,7 +10,7 @@ from ledger.util import F
 from plenum.common.constants import ROLE, TARGET_NYM, VERKEY, TXN_TIME
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.request import Request
-from plenum.common.txn_util import get_payload_data, get_seq_no, get_txn_time, get_request_data, get_from
+from plenum.common.txn_util import get_payload_data, get_seq_no, get_txn_time, get_request_data, get_from, get_endorser
 from plenum.common.types import f
 from plenum.server.database_manager import DatabaseManager
 from plenum.server.request_handlers.nym_handler import NymHandler as PNymHandler
@@ -76,6 +76,9 @@ class NymHandler(PNymHandler):
             new_data[VERKEY] = txn_data[VERKEY]
         new_data[F.seqNo.name] = get_seq_no(txn)
         new_data[TXN_TIME] = get_txn_time(txn)
+        endorser = get_endorser(txn)
+        if endorser:
+            new_data[f.ENDORSER.nm] = endorser
         existing_data.update(new_data)
         val = self.state_serializer.serialize(existing_data)
         key = nym_to_state_key(nym)

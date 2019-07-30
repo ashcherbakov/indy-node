@@ -3,11 +3,11 @@ import json
 import pytest
 from indy.ledger import build_get_schema_request, parse_get_schema_response
 
-from indy_common.state.domain import make_state_path_for_claim_def
+from indy_node.server.request_handlers.domain_req_handlers.claim_def_handler import ClaimDefHandler
 from plenum.common.types import OPERATION
 from plenum.common.util import randomString
 
-from indy_common.authorize.auth_actions import ADD_PREFIX, AuthActionAdd, AuthActionEdit, EDIT_PREFIX
+from indy_common.authorize.auth_actions import ADD_PREFIX, EDIT_PREFIX
 from indy_common.authorize.auth_constraints import AuthConstraint, IDENTITY_OWNER
 from indy_common.constants import CLAIM_DEF, ID, REVOC_TYPE, TAG, CRED_DEF_ID, VALUE, ISSUANCE_TYPE, MAX_CRED_NUM, \
     TAILS_HASH, TAILS_LOCATION, PUBLIC_KEYS, ISSUANCE_BY_DEFAULT, REVOC_REG_DEF, CLAIM_DEF_SCHEMA_REF, \
@@ -90,7 +90,7 @@ class AddRevocRegDefTest(AuthTest):
             TXN_TYPE: REVOC_REG_DEF,
             REVOC_TYPE: "CL_ACCUM",
             TAG: randomString(5),
-            CRED_DEF_ID: make_state_path_for_claim_def(author_did,
+            CRED_DEF_ID: ClaimDefHandler.make_state_path_for_claim_def(author_did,
                                                        str(claim_def_req['operation'][CLAIM_DEF_SCHEMA_REF]),
                                                        claim_def_req['operation'][CLAIM_DEF_SIGNATURE_TYPE],
                                                        claim_def_req['operation'][CLAIM_DEF_TAG]

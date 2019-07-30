@@ -43,14 +43,15 @@ def schema(schema_request):
 
 
 @pytest.fixture(scope="function")
-def claim_def_request(creator, schema):
+def claim_def_request(creator, schema, endorser):
     return Request(identifier=creator,
                    reqId=5,
                    signature="sig",
                    operation={'type': CLAIM_DEF,
                               'ref': get_seq_no(schema),
                               'verkey': randomString(),
-                              'data': {}})
+                              'data': {}},
+                   endorser=endorser)
 
 
 def test_claim_def_dynamic_validation_without_schema(claim_def_request,
@@ -107,7 +108,7 @@ def test_claim_def_dynamic_validation_without_ref_to_not_schema(claim_def_reques
            in e._excinfo[1].args[0]
 
 
-def test_update_state(claim_def_request, claim_def_handler: ClaimDefHandler, schema_handler, schema_request):
+def test_update_state(claim_def_request, claim_def_handler: ClaimDefHandler, schema_handler, schema_request, endorser):
     # add schema to state
     schema_seq_no = 1
     schema_txn_time = 1560241000
@@ -126,7 +127,8 @@ def test_update_state(claim_def_request, claim_def_handler: ClaimDefHandler, sch
     claim_def_handler.update_state(claim_def_txn, None, claim_def_request)
     assert claim_def_handler.get_from_state(path) == (claim_def_request.operation[CLAIM_DEF_PUBLIC_KEYS],
                                                       claim_def_seq_no,
-                                                      claim_def_txn_time)
+                                                      claim_def_txn_time,
+                                                      endorser)
 
 
 def test_update_state_with_incorrect_data(claim_def_request, claim_def_handler: ClaimDefHandler,

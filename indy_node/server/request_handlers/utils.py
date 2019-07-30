@@ -2,12 +2,13 @@ from plenum.common.constants import RAW, ENC, HASH
 
 
 class StateValue:
-    def __init__(self, root_hash=None, value=None, seq_no=None, update_time=None, proof=None):
+    def __init__(self, root_hash=None, value=None, seq_no=None, update_time=None, proof=None, endorser=None):
         self.root_hash = root_hash
         self.value = value
         self.seq_no = seq_no
         self.update_time = update_time
         self.proof = proof
+        self.endorser = endorser
 
 
 def validate_attrib_keys(operation):

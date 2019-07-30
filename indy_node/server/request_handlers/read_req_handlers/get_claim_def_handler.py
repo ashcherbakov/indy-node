@@ -20,7 +20,7 @@ class GetClaimDefHandler(ReadRequestHandler):
         signature_type = get_read_claim_def_signature_type(request)
         schema_ref = get_read_claim_def_schema_ref(request)
         tag = get_read_claim_def_tag(request)
-        keys, last_seq_no, last_update_time, proof = self.get_claim_def(
+        keys, last_seq_no, last_update_time, proof, endorser = self.get_claim_def(
             author=frm,
             schema_seq_no=schema_ref,
             signature_type=signature_type,
@@ -30,7 +30,8 @@ class GetClaimDefHandler(ReadRequestHandler):
                                   data=keys,
                                   last_seq_no=last_seq_no,
                                   update_time=last_update_time,
-                                  proof=proof)
+                                  proof=proof,
+                                  endorser=endorser)
         result[CLAIM_DEF_SIGNATURE_TYPE] = signature_type
         return result
 
@@ -39,12 +40,12 @@ class GetClaimDefHandler(ReadRequestHandler):
                       schema_seq_no: str,
                       signature_type,
                       tag,
-                      is_committed=True) -> (str, int, int, list):
+                      is_committed=True) -> (str, int, int, list, str):
         assert author is not None
         assert schema_seq_no is not None
         path = ClaimDefHandler.make_state_path_for_claim_def(author, schema_seq_no, signature_type, tag)
         try:
-            keys, seq_no, last_update_time, proof = self.lookup(path, is_committed, with_proof=True)
-            return keys, seq_no, last_update_time, proof
+            keys, seq_no, last_update_time, proof, endorser = self.lookup(path, is_committed, with_proof=True)
+            return keys, seq_no, last_update_time, proof, endorser
         except KeyError:
-            return None, None, None, None
+            return None, None, None, None, None

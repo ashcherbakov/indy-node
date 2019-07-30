@@ -3,8 +3,8 @@ import copy
 from indy_common.constants import CRED_DEF_ID, ID, REVOC_TYPE, TAG, GET_REVOC_REG_DEF, \
     TXN_TYPE, TIMESTAMP, REVOC_REG_DEF_ID, VALUE, FROM, TO, ISSUED, \
     REVOKED, PREV_ACCUM, ACCUM
+from indy_common.state.state_constants import MARKER_REVOC_DEF
 from plenum.common.constants import STATE_PROOF
-from indy_common.state import domain
 from plenum.common.txn_util import get_txn_time
 from plenum.common.util import randomString
 from indy_node.test.anon_creds.helper import check_valid_proof
@@ -22,7 +22,7 @@ def test_state_proof_returned_for_get_revoc_reg_def(looper,
     revoc_req, _ = send_revoc_reg_def_by_default
     get_revoc_reg_def_req = {
         ID: ":".join([author_did,
-                      domain.MARKER_REVOC_DEF,
+                      MARKER_REVOC_DEF,
                       revoc_req['operation'][CRED_DEF_ID],
                       revoc_req['operation'][REVOC_TYPE],
                       revoc_req['operation'][TAG]]),

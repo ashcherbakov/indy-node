@@ -5,18 +5,17 @@ import json
 from indy.anoncreds import issuer_create_and_store_credential_def
 from indy.ledger import build_cred_def_request
 
-from indy_common.state.domain import make_state_path_for_claim_def
+from indy_common.state.state_constants import MARKER_REVOC_DEF
+from indy_node.server.request_handlers.domain_req_handlers.claim_def_handler import ClaimDefHandler
 from indy_node.test.anon_creds.helper import get_cred_def_id, create_revoc_reg, create_revoc_reg_entry
-from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.util import randomString
 from indy_common.constants import REVOC_REG_ENTRY, REVOC_REG_DEF_ID, ISSUED, \
     REVOKED, PREV_ACCUM, ACCUM, REVOC_REG_DEF, ISSUANCE_BY_DEFAULT, \
-    CRED_DEF_ID, VALUE, TAG, ISSUANCE_ON_DEMAND, CLAIM_DEF, ID, \
+    CRED_DEF_ID, VALUE, TAG, ISSUANCE_ON_DEMAND, ID, \
     TXN_TYPE, REVOC_TYPE, ISSUANCE_TYPE, MAX_CRED_NUM, TAILS_HASH, TAILS_LOCATION, PUBLIC_KEYS, \
     GET_REVOC_REG_DELTA, GET_REVOC_REG, TIMESTAMP, FROM, TO, CLAIM_DEF_SCHEMA_REF, CLAIM_DEF_SIGNATURE_TYPE, \
     CLAIM_DEF_TAG
 from indy_common.types import Request
-from indy_common.state import domain
 from plenum.test.helper import sdk_sign_request_from_dict, sdk_send_and_check, sdk_sign_and_submit_req, \
     sdk_get_and_check_replies
 from plenum.common.txn_util import reqToTxn, append_txn_metadata
@@ -112,7 +111,7 @@ def add_revoc_def_by_default(create_node_and_not_start,
 def build_revoc_reg_entry_for_given_revoc_reg_def(
         revoc_def_req):
     path = ":".join([revoc_def_req[f.IDENTIFIER.nm],
-                     domain.MARKER_REVOC_DEF,
+                     MARKER_REVOC_DEF,
                      revoc_def_req[OPERATION][CRED_DEF_ID],
                      revoc_def_req[OPERATION][REVOC_TYPE],
                      revoc_def_req[OPERATION][TAG]])
@@ -174,7 +173,7 @@ def build_txn_for_revoc_def_entry_by_demand(looper,
                                             add_revoc_def_by_demand):
     revoc_def_req = add_revoc_def_by_demand
     path = ":".join([revoc_def_req[f.IDENTIFIER.nm],
-                     domain.MARKER_REVOC_DEF,
+                     MARKER_REVOC_DEF,
                      revoc_def_req[OPERATION][CRED_DEF_ID],
                      revoc_def_req[OPERATION][REVOC_TYPE],
                      revoc_def_req[OPERATION][TAG]])
@@ -303,7 +302,7 @@ def send_revoc_reg_def_by_default(looper,
     claim_def_req = send_claim_def[0]
     revoc_reg = build_revoc_def_by_default
     revoc_reg['operation'][CRED_DEF_ID] = \
-        make_state_path_for_claim_def(author_did,
+        ClaimDefHandler.make_state_path_for_claim_def(author_did,
                                       str(claim_def_req['operation'][CLAIM_DEF_SCHEMA_REF]),
                                       claim_def_req['operation'][CLAIM_DEF_SIGNATURE_TYPE],
                                       claim_def_req['operation'][CLAIM_DEF_TAG]
@@ -323,7 +322,7 @@ def send_revoc_reg_def_by_demand(looper,
     _, author_did = sdk_wallet_steward
     claim_def_req = send_claim_def[0]
     revoc_reg = build_revoc_def_by_demand
-    revoc_reg['operation'][CRED_DEF_ID] = make_state_path_for_claim_def(author_did,
+    revoc_reg['operation'][CRED_DEF_ID] = ClaimDefHandler.make_state_path_for_claim_def(author_did,
                                                                         str(claim_def_req['operation'][
                                                                                 CLAIM_DEF_SCHEMA_REF]),
                                                                         claim_def_req['operation'][

@@ -36,7 +36,7 @@ def test_schema_dynamic_validation_passes(schema_request, schema_handler):
     schema_handler.dynamic_validation(schema_request)
 
 
-def test_update_state(schema_request, schema_handler):
+def test_update_state(schema_request, schema_handler, endorser):
     seq_no = 1
     txn_time = 1560241033
     txn = reqToTxn(schema_request)
@@ -47,4 +47,4 @@ def test_update_state(schema_request, schema_handler):
     }
 
     schema_handler.update_state(txn, None, schema_request)
-    assert schema_handler.get_from_state(path) == (value, seq_no, txn_time)
+    assert schema_handler.get_from_state(path) == (value, seq_no, txn_time, endorser)

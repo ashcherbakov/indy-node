@@ -1,11 +1,11 @@
 import pytest
 
+from indy_node.server.request_handlers.domain_req_handlers.revoc_reg_entry_handler import RevocRegEntryHandler
 from indy_node.server.request_handlers.read_req_handlers.get_revoc_reg_delta_handler import GetRevocRegDeltaHandler
 from plenum.common.txn_util import reqToTxn, append_txn_metadata, get_txn_time
 from plenum.common.types import f
 from indy_common.types import Request
 from plenum.common.constants import TXN_TIME, DOMAIN_LEDGER_ID
-from indy_common.state import domain
 from plenum.test.helper import sdk_sign_request_from_dict
 from plenum.common.util import randomString
 from indy_node.test.anon_creds.conftest import build_revoc_reg_entry_for_given_revoc_reg_def
@@ -82,7 +82,7 @@ def test_get_delta_with_other_reg_def_in_state(looper,
 
     # timestamp beetween FIRST_ID_TS and SECOND_ID_TS
     delta_req['operation'][FROM] = FIRST_ID_TS + 10
-    path_to_reg_entry = domain.make_state_path_for_revoc_reg_entry(
+    path_to_reg_entry = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry(
         revoc_reg_def_id=entry_second_id['operation'][REVOC_REG_DEF_ID])
 
     req_handler = None
@@ -97,7 +97,7 @@ def test_get_delta_with_other_reg_def_in_state(looper,
     assert reg_entry.root_hash is not None
     assert reg_entry.value is None
 
-    path_to_reg_entry_accum = domain.make_state_path_for_revoc_reg_entry(
+    path_to_reg_entry_accum = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry(
         revoc_reg_def_id=entry_second_id['operation'][REVOC_REG_DEF_ID])
     reg_entry_accum = req_handler._get_reg_entry_accum_by_timestamp(
         delta_req['operation'][FROM],

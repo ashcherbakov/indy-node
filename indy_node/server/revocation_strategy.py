@@ -2,9 +2,9 @@ from abc import abstractmethod, ABCMeta
 
 from copy import deepcopy
 
-from indy_common.state import domain
 from indy_common.types import Request
 from indy_common.constants import REVOC_REG_DEF_ID, VALUE, ACCUM, PREV_ACCUM, ISSUED, REVOKED
+from indy_node.server.request_handlers.domain_req_handlers.revoc_reg_entry_handler import RevocRegEntryHandler
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.txn_util import get_from, get_req_id, get_payload_data
 
@@ -75,12 +75,12 @@ class RevocationStrategy(metaclass=ABCMeta):
 
     def set_to_state(self, txn):
         # Set REVOC_REG_ENTRY
-        path, value_bytes = domain.prepare_revoc_reg_entry_for_state(txn)
+        path, value_bytes = RevocRegEntryHandler.prepare_revoc_reg_entry_for_state(txn)
         self.state.set(path, value_bytes)
         # Set ACCUM from REVOC_REG_ENTRY
         txn_data = get_payload_data(txn)
         txn_data[VALUE] = {ACCUM: txn_data[VALUE][ACCUM]}
-        path, value_bytes = domain.prepare_revoc_reg_entry_accum_for_state(txn)
+        path, value_bytes = RevocRegEntryHandler.prepare_revoc_reg_entry_accum_for_state(txn)
         self.state.set(path, value_bytes)
 
     @abstractmethod

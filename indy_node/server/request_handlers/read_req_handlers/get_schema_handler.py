@@ -17,7 +17,7 @@ class GetSchemaHandler(ReadRequestHandler):
         author_did = get_read_schema_from(request)
         schema_name = get_read_schema_name(request)
         schema_version = get_read_schema_version(request)
-        schema, last_seq_no, last_update_time, proof = self.get_schema(
+        schema, last_seq_no, last_update_time, proof, endorser = self.get_schema(
             author=author_did,
             schema_name=schema_name,
             schema_version=schema_version,
@@ -35,20 +35,21 @@ class GetSchemaHandler(ReadRequestHandler):
                                 data=schema,
                                 last_seq_no=last_seq_no,
                                 update_time=last_update_time,
-                                proof=proof)
+                                proof=proof,
+                                endorser=endorser)
 
     def get_schema(self,
                    author: str,
                    schema_name: str,
                    schema_version: str,
                    is_committed=True,
-                   with_proof=True) -> (str, int, int, list):
+                   with_proof=True) -> (str, int, int, list, str):
         assert author is not None
         assert schema_name is not None
         assert schema_version is not None
         path = SchemaHandler.make_state_path_for_schema(author, schema_name, schema_version)
         try:
-            keys, seq_no, last_update_time, proof = self.lookup(path, is_committed, with_proof=with_proof)
-            return keys, seq_no, last_update_time, proof
+            keys, seq_no, last_update_time, proof, endorser = self.lookup(path, is_committed, with_proof=with_proof)
+            return keys, seq_no, last_update_time, proof, endorser
         except KeyError:
-            return None, None, None, None
+            return None, None, None, None, None

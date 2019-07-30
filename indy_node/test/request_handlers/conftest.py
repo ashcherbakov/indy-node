@@ -11,6 +11,13 @@ from plenum.common.util import randomString
 from storage.helper import initKeyValueStorage
 
 
+@pytest.fixture(scope="function", params=["no_endorser", "with_endorser"])
+def endorser(request):
+    if request.param == "no_endorser":
+        return None
+    return "5gC6mJq5MoGPwubtU8F5Qc"
+
+
 @pytest.fixture(scope="module")
 def idr_cache(tconf, tdir):
     name = 'name'
@@ -28,7 +35,7 @@ def schema_handler(db_manager, write_auth_req_validator):
 
 
 @pytest.fixture(scope="function")
-def schema_request():
+def schema_request(endorser):
     return Request(identifier=randomString(),
                    reqId=5,
                    signature="sig",
@@ -38,7 +45,8 @@ def schema_request():
                                   'name': 'Degree',
                                   'attr_names': ['last_name',
                                                  'first_name', ]
-                              }})
+                              }},
+                   endorser=endorser)
 
 
 @pytest.fixture(scope="module")
@@ -46,8 +54,8 @@ def revoc_reg_def_handler(db_manager, write_auth_req_validator):
     return RevocRegDefHandler(db_manager, write_auth_req_validator)
 
 
-@pytest.fixture(scope="module")
-def revoc_reg_def_request():
+@pytest.fixture(scope="function")
+def revoc_reg_def_request(endorser):
     return Request(identifier=randomString(),
                    reqId=5,
                    signature="sig",
@@ -55,7 +63,8 @@ def revoc_reg_def_request():
                               CRED_DEF_ID: "credDefId",
                               REVOC_TYPE: randomString(),
                               TAG: randomString(),
-                              })
+                              },
+                   endorser=endorser)
 
 
 @pytest.fixture(scope="module")
@@ -64,4 +73,3 @@ def creator(db_manager):
     idr = db_manager.idr_cache
     add_to_idr(idr, identifier, None)
     return identifier
-

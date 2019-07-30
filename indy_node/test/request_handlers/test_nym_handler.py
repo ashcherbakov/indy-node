@@ -10,6 +10,7 @@ from plenum.common.constants import STEWARD, TARGET_NYM, IDENTIFIER, VERKEY
 from plenum.common.exceptions import InvalidClientRequest, UnauthorizedClientRequest
 from plenum.common.request import Request
 from plenum.common.txn_util import reqToTxn, append_txn_metadata
+from plenum.common.types import f
 from plenum.common.util import randomString
 from plenum.server.request_handlers.utils import nym_to_state_key
 
@@ -20,13 +21,14 @@ def nym_handler(db_manager, tconf, write_auth_req_validator):
 
 
 @pytest.fixture(scope="function")
-def nym_request(creator):
+def nym_request(creator, endorser):
     return Request(identifier=creator,
                    reqId=5,
                    operation={'type': NYM,
                               'dest': randomString(),
                               'role': None,
-                              'verkey': randomString()})
+                              'verkey': randomString()},
+                   endorser=endorser)
 
 
 @pytest.fixture(scope="module")
@@ -98,7 +100,7 @@ def test_nym_dynamic_validation_for_existing_nym(nym_request: Request, nym_handl
         nym_handler.dynamic_validation(nym_request)
 
 
-def test_update_state(nym_request: Request, nym_handler: NymHandler):
+def test_update_state(nym_request: Request, nym_handler: NymHandler, endorser):
     seq_no = 1
     txn_time = 1560241033
     nym = nym_request.operation.get(TARGET_NYM)
@@ -113,3 +115,4 @@ def test_update_state(nym_request: Request, nym_handler: NymHandler):
     assert state_value[F.seqNo.name] == seq_no
     assert state_value[ROLE] == nym_request.operation.get(ROLE)
     assert state_value[VERKEY] == nym_request.operation.get(VERKEY)
+    assert state_value.get(f.ENDORSER.nm) == endorser

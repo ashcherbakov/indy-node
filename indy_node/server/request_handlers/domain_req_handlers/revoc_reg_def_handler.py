@@ -6,7 +6,7 @@ from indy_node.server.revocation_strategy import RevokedStrategy, IssuedStrategy
 from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.request import Request
-from plenum.common.txn_util import get_request_data, get_seq_no, get_txn_time, get_from, get_payload_data
+from plenum.common.txn_util import get_seq_no, get_txn_time, get_from, get_payload_data, get_endorser
 
 from plenum.server.database_manager import DatabaseManager
 from plenum.server.request_handlers.handler_interfaces.write_request_handler import WriteRequestHandler
@@ -52,7 +52,7 @@ class RevocRegDefHandler(WriteRequestHandler):
                                                                         cred_def_id,
                                                                         revoc_def_type,
                                                                         revoc_def_tag)
-        revoc_def, _, _ = self.get_from_state(revoc_def_id)
+        revoc_def, _, _, _ = self.get_from_state(revoc_def_id)
 
         if revoc_def is None:
             self.write_req_validator.validate(request,
@@ -66,7 +66,7 @@ class RevocRegDefHandler(WriteRequestHandler):
                                                               old_value='*',
                                                               new_value='*')])
 
-        cred_def, _, _ = self.get_from_state(cred_def_id)
+        cred_def, _, _, _ = self.get_from_state(cred_def_id)
         if cred_def is None:
             raise InvalidClientRequest(request.identifier,
                                        request.reqId,
@@ -104,7 +104,8 @@ class RevocRegDefHandler(WriteRequestHandler):
         txn_time = get_txn_time(txn)
         assert seq_no
         assert txn_time
-        value_bytes = encode_state_value(txn_data, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(txn_data, seq_no, txn_time, endorser)
         return path, value_bytes
 
     @staticmethod

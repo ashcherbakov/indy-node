@@ -8,7 +8,7 @@ from indy_common.authorize.auth_actions import ADD_PREFIX, EDIT_PREFIX
 from indy_common.authorize.auth_constraints import IDENTITY_OWNER, AuthConstraint
 from indy_common.constants import REVOC_REG_ENTRY, PREV_ACCUM, VALUE, CRED_DEF_ID, REVOC_TYPE, TAG, REVOC_REG_DEF_ID, \
     ACCUM, ISSUED, REVOKED
-from indy_common.state import domain
+from indy_common.state.state_constants import MARKER_REVOC_DEF
 from indy_node.test.auth_rule.auth_framework.basic import AuthTest
 from indy_node.test.auth_rule.auth_framework.revoc_reg_def import AddRevocRegDefTest
 from plenum.common.constants import TXN_TYPE
@@ -46,7 +46,7 @@ class AddRevocRegEntryTest(AuthTest):
     def build_revoc_reg_entry_for_given_revoc_reg_def(self,
                                                       revoc_def_req):
         path = ":".join([revoc_def_req[f.IDENTIFIER.nm],
-                         domain.MARKER_REVOC_DEF,
+                         MARKER_REVOC_DEF,
                          revoc_def_req[OPERATION][CRED_DEF_ID],
                          revoc_def_req[OPERATION][REVOC_TYPE],
                          revoc_def_req[OPERATION][TAG]])

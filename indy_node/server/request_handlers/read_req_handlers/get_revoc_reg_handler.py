@@ -29,26 +29,28 @@ class GetRevocRegHandler(ReadRequestHandler):
                                                               with_proof=True)
             entry_state.proof = proof
             if encoded_entry:
-                revoc_reg_entry_accum, seq_no, last_update_time = decode_state_value(encoded_entry)
+                revoc_reg_entry_accum, seq_no, last_update_time, endorser = decode_state_value(encoded_entry)
                 entry_state = StateValue(root_hash=past_root,
                                          value=revoc_reg_entry_accum,
                                          seq_no=seq_no,
                                          update_time=last_update_time,
-                                         proof=proof)
+                                         proof=proof,
+                                         endorser=endorser)
 
         return self.make_result(request=request,
                                 data=entry_state.value,
                                 last_seq_no=entry_state.seq_no,
                                 update_time=entry_state.update_time,
-                                proof=entry_state.proof)
+                                proof=entry_state.proof,
+                                endorser=entry_state.endorser)
 
     def _get_revoc_def_entry(self,
                              revoc_reg_def_id,
-                             is_committed=True) -> (str, int, int, list):
+                             is_committed=True) -> (str, int, int, list, str):
         assert revoc_reg_def_id
         path = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry(revoc_reg_def_id=revoc_reg_def_id)
         try:
-            keys, seq_no, last_update_time, proof = self.lookup(path, is_committed, with_proof=True)
-            return keys, seq_no, last_update_time, proof
+            keys, seq_no, last_update_time, proof, endorser = self.lookup(path, is_committed, with_proof=True)
+            return keys, seq_no, last_update_time, proof, endorser
         except KeyError:
-            return None, None, None, None
+            return None, None, None, None, None

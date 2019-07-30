@@ -8,7 +8,8 @@ from indy_common.state.state_constants import MARKER_REVOC_REG_ENTRY, MARKER_REV
 from plenum.common.constants import DOMAIN_LEDGER_ID, TXN_TIME
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.request import Request
-from plenum.common.txn_util import get_from, get_payload_data, get_req_id, get_request_data, get_txn_time, get_seq_no
+from plenum.common.txn_util import get_from, get_payload_data, get_req_id, get_request_data, get_txn_time, get_seq_no, \
+    get_endorser
 from plenum.common.types import f
 
 from plenum.server.database_manager import DatabaseManager
@@ -78,7 +79,7 @@ class RevocRegEntryHandler(WriteRequestHandler):
     def _get_current_revoc_entry_and_revoc_def(self, author_did, revoc_reg_def_id, req_id):
         assert revoc_reg_def_id
         current_entry, _, _ = self._get_revoc_def_entry(revoc_reg_def_id=revoc_reg_def_id)
-        revoc_def, _, _ = self.get_from_state(revoc_reg_def_id)
+        revoc_def, _, _, _ = self.get_from_state(revoc_reg_def_id)
         if revoc_def is None:
             raise InvalidClientRequest(author_did,
                                        req_id,
@@ -90,7 +91,7 @@ class RevocRegEntryHandler(WriteRequestHandler):
         assert revoc_reg_def_id
         path = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry(revoc_reg_def_id=revoc_reg_def_id)
         try:
-            keys, seq_no, last_update_time = self.get_from_state(path)
+            keys, seq_no, last_update_time, endorser = self.get_from_state(path)
             return keys, seq_no, last_update_time
         except KeyError:
             return None, None, None, None
@@ -113,7 +114,8 @@ class RevocRegEntryHandler(WriteRequestHandler):
         txn_data = deepcopy(txn_data)
         txn_data[f.SEQ_NO.nm] = seq_no
         txn_data[TXN_TIME] = txn_time
-        value_bytes = encode_state_value(txn_data, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(txn_data, seq_no, txn_time, endorser)
         return path, value_bytes
 
     @staticmethod
@@ -136,7 +138,8 @@ class RevocRegEntryHandler(WriteRequestHandler):
         txn_data = deepcopy(txn_data)
         txn_data[f.SEQ_NO.nm] = seq_no
         txn_data[TXN_TIME] = txn_time
-        value_bytes = encode_state_value(txn_data, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(txn_data, seq_no, txn_time, endorser)
         return path, value_bytes
 
     @staticmethod

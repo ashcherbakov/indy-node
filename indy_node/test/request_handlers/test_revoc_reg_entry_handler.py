@@ -22,14 +22,15 @@ def revoc_reg_entry_handler(db_manager, write_auth_req_validator):
 
 
 @pytest.fixture(scope="function")
-def revoc_reg_entry_request():
+def revoc_reg_entry_request(endorser):
     identifier = randomString()
     return Request(identifier= identifier,
                    reqId=5,
                    operation={'type': REVOC_REG_ENTRY,
                               REVOC_REG_DEF_ID: identifier,
                               VALUE: {ACCUM: 5}},
-                   signature="randomString")
+                   signature="randomString",
+                   endorser=endorser)
 
 
 def test_revoc_reg_entry_dynamic_validation_without_req_def(revoc_reg_entry_handler,
@@ -45,11 +46,17 @@ def test_revoc_reg_entry_dynamic_validation_passes(revoc_reg_entry_handler,
                revoc_reg_entry_request.identifier,
                TRUSTEE)
 
+    # no endorser
     revoc_reg_entry_handler.state.set(revoc_reg_entry_request.operation[REVOC_REG_DEF_ID].encode(),
                                       encode_state_value({VALUE: {ISSUANCE_TYPE: ISSUANCE_BY_DEFAULT}},
                                                          "seqNo", "txnTime"))
     revoc_reg_entry_handler.dynamic_validation(revoc_reg_entry_request)
 
+    # with endorser
+    revoc_reg_entry_handler.state.set(revoc_reg_entry_request.operation[REVOC_REG_DEF_ID].encode(),
+                                      encode_state_value({VALUE: {ISSUANCE_TYPE: ISSUANCE_BY_DEFAULT}},
+                                                         "seqNo", "txnTime", "endorser"))
+    revoc_reg_entry_handler.dynamic_validation(revoc_reg_entry_request)
 
 def test_revoc_reg_entry_dynamic_validation_fail_in_strategy(revoc_reg_entry_handler,
                                                              revoc_reg_entry_request):
@@ -93,7 +100,7 @@ def test_failed_update_state(revoc_reg_entry_handler, revoc_reg_entry_request):
 
 
 def test_update_state(revoc_reg_entry_handler, revoc_reg_entry_request,
-                      revoc_reg_def_handler, revoc_reg_def_request):
+                      revoc_reg_def_handler, revoc_reg_def_request, endorser):
     # create revoc_req_def
     seq_no = 1
     txn_time = 1560241030
@@ -119,8 +126,8 @@ def test_update_state(revoc_reg_entry_handler, revoc_reg_entry_request,
     txn_data[TXN_TIME] = txn_time
     assert revoc_reg_entry_handler.get_from_state(
         RevocRegEntryHandler.prepare_revoc_reg_entry_for_state(txn,
-                                                               path_only=True)) == (txn_data, seq_no, txn_time)
+                                                               path_only=True)) == (txn_data, seq_no, txn_time, endorser)
     # check state for revoc_reg_entry
     txn_data[VALUE] = {ACCUM: txn_data[VALUE][ACCUM]}
     path, _ = RevocRegEntryHandler.prepare_revoc_reg_entry_accum_for_state(txn)
-    assert revoc_reg_entry_handler.get_from_state(path) == (txn_data, seq_no, txn_time)
+    assert revoc_reg_entry_handler.get_from_state(path) == (txn_data, seq_no, txn_time, endorser)

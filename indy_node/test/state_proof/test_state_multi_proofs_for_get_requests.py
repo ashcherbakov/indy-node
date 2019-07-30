@@ -12,6 +12,7 @@ from crypto.bls.bls_multi_signature import MultiSignature, MultiSignatureValue
 from indy_common.authorize.auth_constraints import ConstraintsSerializer
 from indy_common.authorize.auth_map import auth_map
 from indy_common.authorize.auth_request_validator import WriteRequestValidator
+from indy_node.server.request_handlers.domain_req_handlers.attribute_handler import AttributeHandler
 from plenum.bls.bls_store import BlsStore
 from plenum.common.constants import TXN_TYPE, TARGET_NYM, RAW, DATA, \
     IDENTIFIER, NAME, VERSION, ROLE, VERKEY, KeyValueStorageType, \
@@ -27,11 +28,10 @@ from indy_node.persistence.attribute_store import AttributeStore
 from indy_node.persistence.idr_cache import IdrCache
 from plenum.common.util import get_utc_epoch, friendlyToRaw, rawToFriendly, \
     friendlyToHex, hexToFriendly
-from plenum.server.request_handlers.utils import nym_to_state_key
+from plenum.server.request_handlers.utils import nym_to_state_key, encode_state_value
 from plenum.test.testing_utils import FakeSomething
 from state.pruning_state import PruningState
 from storage.kv_in_memory import KeyValueStorageInMemory
-from indy_common.state import domain
 
 
 def extract_proof(result, expected_multi_sig):
@@ -60,7 +60,7 @@ def save_multi_sig(db_manager):
 def is_proof_verified(db_manager,
                       proof, path,
                       value, seq_no, txn_time):
-    encoded_value = domain.encode_state_value(value, seq_no, txn_time)
+    encoded_value = encode_state_value(value, seq_no, txn_time)
     proof_nodes = base64.b64decode(proof[PROOF_NODES])
     root_hash = base58.b58decode(proof[ROOT_HASH])
     verified = db_manager.get_state(DOMAIN_LEDGER_ID).verify_state_proof(
@@ -113,10 +113,10 @@ def test_state_proofs_for_get_attr(write_manager,
     assert attr_value == raw_attribute
 
     # Verifying signed state proof
-    path = domain.make_state_path_for_attr(nym, attr_key)
+    path = AttributeHandler.make_state_path_for_attr(nym, attr_key)
     assert is_proof_verified(db_manager,
                              proof, path,
-                             domain.hash_of(attr_value), seq_no, txn_time)
+                             AttributeHandler.hash_of(attr_value), seq_no, txn_time)
 
 
 def test_state_proofs_for_get_claim_def(write_manager,

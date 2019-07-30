@@ -10,7 +10,8 @@ from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.exceptions import InvalidClientRequest
 
 from plenum.common.request import Request
-from plenum.common.txn_util import get_request_data, get_from, get_seq_no, get_txn_time
+from plenum.common.txn_util import get_request_data, get_from, get_seq_no, get_txn_time, get_endorser
+from plenum.common.types import f
 from plenum.server.database_manager import DatabaseManager
 from plenum.server.request_handlers.handler_interfaces.write_request_handler import WriteRequestHandler
 from plenum.server.request_handlers.utils import encode_state_value
@@ -34,7 +35,7 @@ class SchemaHandler(WriteRequestHandler):
         schema_name = get_write_schema_name(request)
         schema_version = get_write_schema_version(request)
         path = SchemaHandler.make_state_path_for_schema(identifier, schema_name, schema_version)
-        schema, _, _ = self.get_from_state(path)
+        schema, _, _, _ = self.get_from_state(path)
         if schema:
             self.write_req_validator.validate(request,
                                               [AuthActionEdit(txn_type=SCHEMA,
@@ -71,7 +72,8 @@ class SchemaHandler(WriteRequestHandler):
             return path
         seq_no = get_seq_no(txn)
         txn_time = get_txn_time(txn)
-        value_bytes = encode_state_value(value, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(value, seq_no, txn_time, endorser)
         return path, value_bytes
 
     @staticmethod

@@ -4,6 +4,9 @@ from indy import blob_storage
 from indy.anoncreds import issuer_create_and_store_revoc_reg
 from indy.ledger import build_revoc_reg_def_request, build_revoc_reg_entry_request
 
+from indy_common.state.state_constants import MARKER_CLAIM_DEF, MARKER_REVOC_DEF, MARKER_REVOC_REG_ENTRY
+from indy_node.server.request_handlers.domain_req_handlers.revoc_reg_def_handler import RevocRegDefHandler
+from indy_node.server.request_handlers.domain_req_handlers.revoc_reg_entry_handler import RevocRegEntryHandler
 from plenum.common.types import f
 
 from plenum.common.constants import STATE_PROOF, ROOT_HASH, MULTI_SIGNATURE, PROOF_NODES, MULTI_SIGNATURE_SIGNATURE, \
@@ -12,14 +15,14 @@ from plenum.common.constants import STATE_PROOF, ROOT_HASH, MULTI_SIGNATURE, PRO
     MULTI_SIGNATURE_VALUE_TIMESTAMP, TYPE, DATA, TXN_TIME, TXN_PAYLOAD, TXN_PAYLOAD_METADATA, TXN_PAYLOAD_METADATA_FROM, \
     TXN_PAYLOAD_DATA, TXN_METADATA, TXN_METADATA_SEQ_NO, TXN_METADATA_TIME
 from indy_common.constants import VALUE, GET_REVOC_REG_DEF, GET_REVOC_REG, GET_REVOC_REG_DELTA, \
-    ACCUM_TO, ISSUED, STATE_PROOF_FROM, ACCUM_FROM, CRED_DEF_ID, REVOC_TYPE, TAG
+    ACCUM_TO, ISSUED, STATE_PROOF_FROM, ACCUM_FROM, CRED_DEF_ID, REVOC_TYPE, TAG, REVOC_REG_DEF_ID
 from common.serializers.serialization import state_roots_serializer, proof_nodes_serializer
+from plenum.server.request_handlers.utils import encode_state_value
 from state.pruning_state import PruningState
-from indy_common.state import domain
 
 
 def get_cred_def_id(submitter_did, schema_id, tag):
-    cred_def_marker = domain.MARKER_CLAIM_DEF
+    cred_def_marker = MARKER_CLAIM_DEF
     signature_type = 'CL'
     cred_def_id = ':'.join([submitter_did, cred_def_marker, signature_type, str(schema_id), tag])
     return cred_def_id
@@ -27,14 +30,14 @@ def get_cred_def_id(submitter_did, schema_id, tag):
 
 def get_revoc_reg_def_id(author_did, revoc_req):
     return ":".join([author_did,
-                     domain.MARKER_REVOC_DEF,
+                     MARKER_REVOC_DEF,
                      revoc_req['operation'][CRED_DEF_ID],
                      revoc_req['operation'][REVOC_TYPE],
                      revoc_req['operation'][TAG]])
 
 
 def get_revoc_reg_entry_id(submitter_did, def_revoc_id):
-    entry_revoc_id = ':'.join([submitter_did, domain.MARKER_REVOC_REG_ENTRY, def_revoc_id])
+    entry_revoc_id = ':'.join([submitter_did, MARKER_REVOC_REG_ENTRY, def_revoc_id])
     return entry_revoc_id
 
 
@@ -74,18 +77,66 @@ def create_revoc_reg_entry(looper, wallet_handle, submitter_did, tag, cred_def_i
 def prepare_for_state(result):
     request_type = result[TYPE]
     if request_type == GET_REVOC_REG_DEF:
-        return domain.prepare_get_revoc_def_for_state(result)
+        return prepare_get_revoc_def_for_state(result)
     if request_type == GET_REVOC_REG:
-        return domain.prepare_get_revoc_reg_entry_accum_for_state(result)
+        return prepare_get_revoc_reg_entry_accum_for_state(result)
     if request_type == GET_REVOC_REG_DELTA:
         if ISSUED in result[DATA][VALUE]:
-            return domain.prepare_get_revoc_reg_entry_for_state(result)
+            return prepare_get_revoc_reg_entry_for_state(result)
         else:
-            return domain.prepare_get_revoc_reg_entry_accum_for_state(result)
+            return prepare_get_revoc_reg_entry_accum_for_state(result)
     raise ValueError("Cannot make state key for "
                      "request of type {}"
                      .format(request_type))
 
+def prepare_get_revoc_def_for_state(reply):
+    author_did = reply.get(f.IDENTIFIER.nm)
+    cred_def_id = reply.get(DATA).get(CRED_DEF_ID)
+    revoc_def_type = reply.get(DATA).get(REVOC_TYPE)
+    revoc_def_tag = reply.get(DATA).get(TAG)
+    endorser = reply.get(f.ENDORSER.nm)
+    assert author_did
+    assert cred_def_id
+    assert revoc_def_type
+    assert revoc_def_tag
+    path = RevocRegDefHandler.make_state_path_for_revoc_def(author_did,
+                                         cred_def_id,
+                                         revoc_def_type,
+                                         revoc_def_tag)
+    seq_no = reply[f.SEQ_NO.nm]
+    txn_time = reply[TXN_TIME]
+    assert seq_no
+    assert txn_time
+    value_bytes = encode_state_value(reply[DATA], seq_no, txn_time, endorser)
+    return path, value_bytes
+
+
+def prepare_get_revoc_reg_entry_for_state(reply):
+    revoc_reg_def_id = reply.get(DATA).get(REVOC_REG_DEF_ID)
+    assert revoc_reg_def_id
+    path = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry(revoc_reg_def_id=revoc_reg_def_id)
+
+    seq_no = reply[f.SEQ_NO.nm]
+    txn_time = reply[TXN_TIME]
+    endorser = reply.get(f.ENDORSER.nm)
+    assert seq_no
+    assert txn_time
+    value_bytes = encode_state_value(reply[DATA], seq_no, txn_time, endorser)
+    return path, value_bytes
+
+
+def prepare_get_revoc_reg_entry_accum_for_state(reply):
+    revoc_reg_def_id = reply.get(DATA).get(REVOC_REG_DEF_ID)
+    seq_no = reply[f.SEQ_NO.nm]
+    txn_time = reply[TXN_TIME]
+    endorser = reply.get(f.ENDORSER.nm)
+    assert revoc_reg_def_id
+    assert seq_no
+    assert txn_time
+    path = RevocRegEntryHandler.make_state_path_for_revoc_reg_entry_accum(revoc_reg_def_id=revoc_reg_def_id)
+
+    value_bytes = encode_state_value(reply[DATA], seq_no, txn_time, endorser)
+    return path, value_bytes
 
 def validate_proof(result):
     """

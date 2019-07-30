@@ -67,7 +67,7 @@ class GetRevocRegDeltaHandler(ReadRequestHandler):
             encoded_revoc_reg_def = self.state.get_for_root_hash(entry_to.root_hash,
                                                                  revoc_reg_def_id)
             if encoded_revoc_reg_def:
-                revoc_reg_def, _, _ = decode_state_value(encoded_revoc_reg_def)
+                revoc_reg_def, _, _, _ = decode_state_value(encoded_revoc_reg_def)
                 strategy_cls = self.get_revocation_strategy(revoc_reg_def[VALUE][ISSUANCE_TYPE])
                 issued_to = entry_to.value[VALUE].get(ISSUED, [])
                 revoked_to = entry_to.value[VALUE].get(REVOKED, [])
@@ -130,32 +130,36 @@ class GetRevocRegDeltaHandler(ReadRequestHandler):
         seq_no = None
         last_update_time = None
         reg_entry_proof = None
+        endorser = None
         past_root = self.database_manager.ts_store.get_equal_or_prev(timestamp)
         if past_root:
             encoded_entry, reg_entry_proof = self._get_value_from_state(path_to_reg_entry,
                                                                         head_hash=past_root,
                                                                         with_proof=True)
             if encoded_entry:
-                reg_entry, seq_no, last_update_time = decode_state_value(encoded_entry)
+                reg_entry, seq_no, last_update_time, endorser = decode_state_value(encoded_entry)
         return StateValue(root_hash=past_root,
                           value=reg_entry,
                           seq_no=seq_no,
                           update_time=last_update_time,
-                          proof=reg_entry_proof)
+                          proof=reg_entry_proof,
+                          endorser=endorser)
 
     def _get_reg_entry_accum_by_timestamp(self, timestamp, path_to_reg_entry_accum):
         reg_entry_accum = None
         seq_no = None
         last_update_time = None
         reg_entry_accum_proof = None
+        endorser = None
         past_root = self.database_manager.ts_store.get_equal_or_prev(timestamp)
         if past_root:
             encoded_entry, reg_entry_accum_proof = self._get_value_from_state(
                 path_to_reg_entry_accum, head_hash=past_root, with_proof=True)
             if encoded_entry:
-                reg_entry_accum, seq_no, last_update_time = decode_state_value(encoded_entry)
+                reg_entry_accum, seq_no, last_update_time, endorser = decode_state_value(encoded_entry)
         return StateValue(root_hash=past_root,
                           value=reg_entry_accum,
                           seq_no=seq_no,
                           update_time=last_update_time,
-                          proof=reg_entry_accum_proof)
+                          proof=reg_entry_accum_proof,
+                          endorser=endorser)

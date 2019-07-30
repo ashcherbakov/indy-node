@@ -2,9 +2,8 @@ import pytest
 import time
 from indy_common.constants import REVOC_REG_DEF_ID, ISSUED, REVOKED, \
     PREV_ACCUM, ACCUM, TXN_TYPE, CRED_DEF_ID, VALUE, TAG
+from indy_common.state.state_constants import MARKER_REVOC_DEF
 from indy_common.types import Request
-from indy_common.state import domain
-from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.types import f
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.util import randomString
@@ -116,7 +115,7 @@ def test_validation_if_revoc_def_does_not_exist(
         build_txn_for_revoc_def_entry_by_default,
         create_node_and_not_start):
     path = ":".join([f.IDENTIFIER.nm,
-                     domain.MARKER_REVOC_DEF,
+                     MARKER_REVOC_DEF,
                      CRED_DEF_ID,
                      TXN_TYPE,
                      TAG])

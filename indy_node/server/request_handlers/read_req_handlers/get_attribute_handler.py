@@ -34,7 +34,7 @@ class GetAttributeHandler(ReadRequestHandler):
         else:
             attr_type = HASH
         attr_key = operation[attr_type]
-        value, last_seq_no, last_update_time, proof = \
+        value, last_seq_no, last_update_time, proof, endorser = \
             self.get_attr(did=nym, key=attr_key, attr_type=attr_type)
         attr = None
         if value is not None:
@@ -46,29 +46,30 @@ class GetAttributeHandler(ReadRequestHandler):
                                 data=attr,
                                 last_seq_no=last_seq_no,
                                 update_time=last_update_time,
-                                proof=proof)
+                                proof=proof,
+                                endorser=endorser)
 
     def get_attr(self,
                  did: str,
                  key: str,
                  attr_type,
-                 is_committed=True) -> (str, int, int, list):
+                 is_committed=True) -> (str, int, int, list, str):
         assert did is not None
         assert key is not None
         path = AttributeHandler.make_state_path_for_attr(did, key, attr_type == HASH)
         try:
-            hashed_val, last_seq_no, last_update_time, proof = \
+            hashed_val, last_seq_no, last_update_time, proof, endorser = \
                 self.lookup(path, is_committed, with_proof=True)
         except KeyError:
-            return None, None, None, None
+            return None, None, None, None, None
         if not hashed_val or hashed_val == '':
             # Its a HASH attribute
-            return hashed_val, last_seq_no, last_update_time, proof
+            return hashed_val, last_seq_no, last_update_time, proof, endorser
         else:
             try:
                 value = self.database_manager.attribute_store.get(hashed_val)
             except KeyError:
                 logger.error('Could not get value from attribute store for {}'
                              .format(hashed_val))
-                return None, None, None, None
-        return value, last_seq_no, last_update_time, proof
+                return None, None, None, None, None
+        return value, last_seq_no, last_update_time, proof, endorser

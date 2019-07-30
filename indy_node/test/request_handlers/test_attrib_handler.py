@@ -24,13 +24,14 @@ def attrib_handler(db_manager, write_auth_req_validator):
 
 
 @pytest.fixture(scope="function")
-def attrib_request(attributeData, looper, sdk_wallet_client):
+def attrib_request(attributeData, looper, sdk_wallet_client, endorser):
     return Request(identifier=sdk_wallet_client[1],
                    reqId=5,
                    signature="signature",
                    operation={'type': ATTRIB,
                               'dest': randomString(),
-                              'raw': attributeData})
+                              'raw': attributeData},
+                   endorser=endorser)
 
 
 def test_attrib_static_validation_passes(attrib_request, attrib_handler: AttributeHandler):
@@ -60,7 +61,7 @@ def test_attrib_dynamic_validation_passes(attrib_request, attrib_handler: Attrib
     attrib_handler.dynamic_validation(attrib_request)
 
 
-def test_update_state(attrib_handler, attrib_request):
+def test_update_state(attrib_handler, attrib_request, endorser):
     seq_no = 1
     txn_time = 1560241033
     txn_id = "id"
@@ -69,5 +70,5 @@ def test_update_state(attrib_handler, attrib_request):
     attr_type, path, value, hashed_value, value_bytes = AttributeHandler.prepare_attr_for_state(txn)
 
     attrib_handler.update_state(txn, None, attrib_request)
-    assert attrib_handler.get_from_state(path) == (hashed_value, seq_no, txn_time)
+    assert attrib_handler.get_from_state(path) == (hashed_value, seq_no, txn_time, endorser)
 

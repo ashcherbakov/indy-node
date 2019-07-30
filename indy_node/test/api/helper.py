@@ -190,7 +190,7 @@ def sdk_build_schema_request(looper, sdk_wallet_client,
 
     return looper.loop.run_until_complete(
         build_schema_request(identifier, schema_json)
-    )
+    ), schema_json
 
 
 def sdk_write_schema(looper, sdk_pool_handle, sdk_wallet_client, multi_attribute=[], name="", version=""):
@@ -211,7 +211,7 @@ def sdk_write_schema(looper, sdk_pool_handle, sdk_wallet_client, multi_attribute
 
 def sdk_write_schema_and_check(looper, sdk_pool_handle, sdk_wallet_client,
                                attributes=[], name="", version=""):
-    request = sdk_build_schema_request(looper, sdk_wallet_client,
+    request, _ = sdk_build_schema_request(looper, sdk_wallet_client,
                                        attributes, name, version)
     req = sdk_sign_and_submit_req(sdk_pool_handle, sdk_wallet_client, request)
     rep = sdk_get_and_check_replies(looper, [req])

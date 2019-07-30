@@ -4,7 +4,7 @@ import pytest
 
 from indy_common.constants import CRED_DEF_ID, CLAIM_DEF_SCHEMA_REF, CLAIM_DEF_SIGNATURE_TYPE, \
     CLAIM_DEF_TAG, VALUE, ISSUANCE_TYPE, REVOKED, PREV_ACCUM, ISSUANCE_BY_DEFAULT
-from indy_common.state.domain import make_state_path_for_claim_def
+from indy_node.server.request_handlers.domain_req_handlers.claim_def_handler import ClaimDefHandler
 from indy_node.test.anon_creds.conftest import build_revoc_reg_entry_for_given_revoc_reg_def
 from plenum.common.exceptions import RequestNackedException
 from plenum.test.helper import sdk_sign_request_from_dict, sdk_send_and_check
@@ -20,7 +20,7 @@ def test_incorrect_revoc_reg_def(looper,
     claim_def_req = send_claim_def[0]
     revoc_reg = build_revoc_def_by_default
     revoc_reg['operation'][CRED_DEF_ID] = \
-        make_state_path_for_claim_def(author_did,
+        ClaimDefHandler.make_state_path_for_claim_def(author_did,
                                       str(claim_def_req['operation'][CLAIM_DEF_SCHEMA_REF]),
                                       claim_def_req['operation'][CLAIM_DEF_SIGNATURE_TYPE],
                                       claim_def_req['operation'][CLAIM_DEF_TAG]

@@ -2,11 +2,10 @@ from _sha256 import sha256
 from copy import deepcopy
 from json import JSONDecodeError
 
-from common.exceptions import LogicError
+from common.serializers.serialization import domain_state_serializer
 from indy_common.authorize.auth_actions import AuthActionEdit, AuthActionAdd
 from indy_common.authorize.auth_request_validator import WriteRequestValidator
 from indy_common.serialization import attrib_raw_data_serializer
-from indy_common.state import domain
 
 from indy_common.constants import ATTRIB
 from indy_common.state.state_constants import MARKER_ATTR
@@ -15,7 +14,7 @@ from plenum.common.constants import DOMAIN_LEDGER_ID, RAW, ENC, HASH, TARGET_NYM
 from plenum.common.exceptions import InvalidClientRequest, UnauthorizedClientRequest
 
 from plenum.common.request import Request
-from plenum.common.txn_util import get_type, get_request_data, get_payload_data, get_seq_no, get_txn_time
+from plenum.common.txn_util import get_type, get_request_data, get_payload_data, get_seq_no, get_txn_time, get_endorser
 from plenum.server.database_manager import DatabaseManager
 from plenum.server.request_handlers.handler_interfaces.write_request_handler import WriteRequestHandler
 from plenum.server.request_handlers.utils import encode_state_value
@@ -128,7 +127,7 @@ class AttributeHandler(WriteRequestHandler):
         assert key is not None
         path = AttributeHandler.make_state_path_for_attr(did, key, attr_type == HASH)
         try:
-            hashed_val, lastSeqNo, lastUpdateTime = self.get_from_state(path, is_commited)
+            hashed_val, lastSeqNo, lastUpdateTime, endorser = self.get_from_state(path, is_commited)
         except KeyError:
             return None, None, None, None
         if not hashed_val or hashed_val == '':
@@ -154,10 +153,11 @@ class AttributeHandler(WriteRequestHandler):
         path = AttributeHandler.make_state_path_for_attr(nym, attr_key, attr_type == HASH)
         if path_only:
             return path
-        hashed_value = domain.hash_of(value) if value else ''
+        hashed_value = AttributeHandler.hash_of(value) if value else ''
         seq_no = get_seq_no(txn)
         txn_time = get_txn_time(txn)
-        value_bytes = encode_state_value(hashed_value, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(hashed_value, seq_no, txn_time, endorser)
         return attr_type, path, value, hashed_value, value_bytes
 
     @staticmethod
@@ -201,6 +201,14 @@ class AttributeHandler(WriteRequestHandler):
                     MARKER=MARKER_ATTR,
                     ATTR_NAME=nameHash).encode()
 
+    @staticmethod
+    def hash_of(text) -> str:
+        if not isinstance(text, (str, bytes)):
+            text = domain_state_serializer.serialize(text)
+        if not isinstance(text, bytes):
+            text = text.encode()
+        return sha256(text).hexdigest()
+
     def transform_txn_for_ledger(self, txn):
         """
         Creating copy of result so that `RAW`, `ENC` or `HASH` can be
@@ -211,6 +219,6 @@ class AttributeHandler(WriteRequestHandler):
         txn_data = get_payload_data(txn)
         attr_type, _, value = self.parse_attr_txn(txn_data)
         if attr_type in [RAW, ENC]:
-            txn_data[attr_type] = domain.hash_of(value) if value else ''
+            txn_data[attr_type] = self.hash_of(value) if value else ''
 
         return txn

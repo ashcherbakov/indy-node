@@ -10,7 +10,7 @@ from indy_common.state.state_constants import MARKER_CLAIM_DEF
 from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.exceptions import InvalidClientRequest
 from plenum.common.request import Request
-from plenum.common.txn_util import get_request_data, get_from, get_seq_no, get_txn_time
+from plenum.common.txn_util import get_request_data, get_from, get_seq_no, get_txn_time, get_endorser
 
 from plenum.server.database_manager import DatabaseManager
 from plenum.server.request_handlers.handler_interfaces.write_request_handler import WriteRequestHandler
@@ -49,7 +49,7 @@ class ClaimDefHandler(WriteRequestHandler):
 
         path = self.make_state_path_for_claim_def(identifier, schema_ref, signature_type, tag)
 
-        claim_def, _, _ = self.get_from_state(path, is_committed=False)
+        claim_def, _, _, _ = self.get_from_state(path, is_committed=False)
 
         if claim_def:
             self.write_req_validator.validate(request,
@@ -93,7 +93,8 @@ class ClaimDefHandler(WriteRequestHandler):
             return path
         seq_no = get_seq_no(txn)
         txn_time = get_txn_time(txn)
-        value_bytes = encode_state_value(data, seq_no, txn_time)
+        endorser = get_endorser(txn)
+        value_bytes = encode_state_value(data, seq_no, txn_time, endorser)
         return path, value_bytes
 
     @staticmethod

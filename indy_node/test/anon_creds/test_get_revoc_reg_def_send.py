@@ -1,9 +1,8 @@
 import json
 import time
 from indy_common.constants import CRED_DEF_ID, ID, REVOC_TYPE, TAG, GET_REVOC_REG_DEF, VALUE, MAX_CRED_NUM, TXN_TYPE
-from indy_common.state import domain
+from indy_common.state.state_constants import MARKER_REVOC_DEF
 from indy_common.types import Request
-from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.test.helper import sdk_sign_request_from_dict
 from plenum.test.helper import sdk_send_and_check
 
@@ -25,7 +24,7 @@ def test_send_get_revoc_reg_def(looper,
     revoc_reg_def_id = revoc_req['operation'][ID]
     get_revoc_reg_def_req = {
         ID: ":".join([author_did,
-                      domain.MARKER_REVOC_DEF,
+                      MARKER_REVOC_DEF,
                       revoc_req['operation'][CRED_DEF_ID],
                       revoc_req['operation'][REVOC_TYPE],
                       revoc_req['operation'][TAG]]),
@@ -61,7 +60,7 @@ def test_get_revoc_reg_def_from_uncommited(looper,
         node.write_manager.apply_request(Request(**revoc_req), int(time.time()))
     get_revoc_reg_def_req = {
         ID: ":".join([author_did,
-                      domain.MARKER_REVOC_DEF,
+                      MARKER_REVOC_DEF,
                       revoc_req['operation'][CRED_DEF_ID],
                       revoc_req['operation'][REVOC_TYPE],
                       revoc_req['operation'][TAG]]),

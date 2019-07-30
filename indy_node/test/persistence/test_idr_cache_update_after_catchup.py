@@ -2,7 +2,7 @@ import json
 
 from indy.ledger import build_nym_request, sign_request, submit_request
 
-from indy_common.state import domain
+from indy_node.server.request_handlers.domain_req_handlers.nym_handler import NymHandler
 from indy_node.test.helper import start_stopped_node, createHalfKeyIdentifierAndAbbrevVerkey
 from plenum.common.constants import DOMAIN_LEDGER_ID
 from plenum.common.txn_util import get_txn_time
@@ -35,7 +35,7 @@ def test_idr_cache_update_after_catchup(txnPoolNodeSet,
     txnPoolNodeSet[-1] = restarted_node
     waitNodeDataEquality(looper, restarted_node, *txnPoolNodeSet[:-1])
     root_hash = restarted_node.db_manager.ts_store.get_equal_or_prev(get_txn_time(result['result']))
-    key = domain.make_state_path_for_nym(idr)
+    key = NymHandler.make_state_path_for_nym(idr)
     from_state = restarted_node.getState(DOMAIN_LEDGER_ID).get_for_root_hash(root_hash=root_hash,
                                                                                    key=key)
     assert from_state

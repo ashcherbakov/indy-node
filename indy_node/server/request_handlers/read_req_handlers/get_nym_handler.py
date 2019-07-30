@@ -25,17 +25,20 @@ class GetNymHandler(ReadRequestHandler):
             data = domain_state_serializer.serialize(nym_data)
             seq_no = nym_data[f.SEQ_NO.nm]
             update_time = nym_data[TXN_TIME]
+            endorser = nym_data.get(f.ENDORSER.nm)
         else:
             data = None
             seq_no = None
             update_time = None
+            endorser = None
 
         # TODO: add update time here!
         result = self.make_result(request=request,
                                   data=data,
                                   last_seq_no=seq_no,
                                   update_time=update_time,
-                                  proof=proof)
+                                  proof=proof,
+                                  endorser=endorser)
 
         result.update(request.operation)
         return result

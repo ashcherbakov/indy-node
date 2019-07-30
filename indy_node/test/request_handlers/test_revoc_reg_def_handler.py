@@ -47,8 +47,15 @@ def test_revoc_reg_def_dynamic_validation_passes(revoc_reg_def_handler,
                revoc_reg_def_request.identifier,
                TRUSTEE)
     cred_def_id = revoc_reg_def_request.operation.get(CRED_DEF_ID)
+
+    # no endorser
     revoc_reg_def_handler.state.set(cred_def_id.encode(),
                                     encode_state_value("value", "seqNo", "txnTime"))
+    revoc_reg_def_handler.dynamic_validation(revoc_reg_def_request)
+
+    # with endorser
+    revoc_reg_def_handler.state.set(cred_def_id.encode(),
+                                    encode_state_value("value", "seqNo", "txnTime", "endorser"))
     revoc_reg_def_handler.dynamic_validation(revoc_reg_def_request)
 
 
@@ -65,7 +72,7 @@ def test_revoc_reg_def_dynamic_validation_without_permission(revoc_reg_def_handl
         revoc_reg_def_handler.dynamic_validation(revoc_reg_def_request)
 
 
-def test_update_state(revoc_reg_def_handler, revoc_reg_def_request):
+def test_update_state(revoc_reg_def_handler, revoc_reg_def_request, endorser):
     seq_no = 1
     txn_time = 1560241033
     txn = reqToTxn(revoc_reg_def_request)
@@ -75,4 +82,4 @@ def test_update_state(revoc_reg_def_handler, revoc_reg_def_request):
                                                           path_only=True)
 
     revoc_reg_def_handler.update_state(txn, None, revoc_reg_def_request)
-    assert revoc_reg_def_handler.get_from_state(path) == (value, seq_no, txn_time)
+    assert revoc_reg_def_handler.get_from_state(path) == (value, seq_no, txn_time, endorser)
